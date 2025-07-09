@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aadhaar FAQ Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #ffffff;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(23, 23, 23, 0.95);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(37, 99, 235, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: linear-gradient(180deg, rgba(23, 23, 23, 0.95) 0%, rgba(15, 15, 15, 0.95) 100%);
+        }
+
+        .message {
+            margin-bottom: 24px;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message.bot {
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 75%;
+            padding: 16px 20px;
+            border-radius: 18px;
+            font-size: 15px;
+            line-height: 1.6;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+
+        .message.bot .message-content {
+            background: rgba(55, 55, 55, 0.8);
+            color: #e5e5e5;
+            border-bottom-left-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .input-container {
+            padding: 20px;
+            background: rgba(23, 23, 23, 0.95);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: rgba(40, 40, 40, 0.8);
+            border-radius: 25px;
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+
+        .input-wrapper input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 16px;
+            padding: 12px 16px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .input-wrapper input::placeholder {
+            color: #888;
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border: none;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            min-width: 60px;
+            font-weight: 500;
+        }
+
+        .send-button:hover {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .send-button:active {
+            transform: translateY(0);
+        }
+
+        .send-button:disabled {
+            background: rgba(100, 100, 100, 0.3);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 16px 20px;
+            background: rgba(55, 55, 55, 0.8);
+            border-radius: 18px;
+            border-bottom-left-radius: 6px;
+            max-width: 75%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #888;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 40px 20px;
+            opacity: 0.7;
+        }
+
+        .welcome-message h2 {
+            font-size: 24px;
+            margin-bottom: 16px;
+            color: #2563eb;
+        }
+
+        .welcome-message p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #ccc;
+        }
+
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 24px;
+            justify-content: center;
+        }
+
+        .suggestion {
+            background: rgba(40, 40, 40, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e5e5e5;
+            padding: 10px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .suggestion:hover {
+            background: rgba(37, 99, 235, 0.2);
+            border-color: #2563eb;
+            transform: translateY(-2px);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                max-width: 100%;
+                border-left: none;
+                border-right: none;
+            }
+            
+            .message-content {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">
+            <h1>Aadhaar FAQ Assistant</h1>
+            <p>Get instant answers to your Aadhaar-related questions</p>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <h2>Welcome to Aadhaar FAQ Assistant!</h2>
+                <p>I'm here to help you with all your Aadhaar-related questions. You can ask me about enrollment, document requirements, updates, and more.</p>
+                <div class="suggestions">
+                    <div class="suggestion" onclick="askQuestion('How to enroll for Aadhaar?')">How to enroll for Aadhaar?</div>
+                    <div class="suggestion" onclick="askQuestion('What documents are required?')">What documents are required?</div>
+                    <div class="suggestion" onclick="askQuestion('Is Aadhaar enrollment free?')">Is Aadhaar enrollment free?</div>
+                    <div class="suggestion" onclick="askQuestion('How long does it take to get Aadhaar?')">How long does it take?</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-container">
+            <div class="input-wrapper">
+                <input type="text" id="messageInput" placeholder="Ask me anything about Aadhaar..." />
+                <button class="send-button" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // FAQ Data
+        const faqData = [
+            {"question": "Where can I enrol for Aadhaar?", "answer": "You have to visit an Aadhaar Enrolment centre set up by Enrolment Agency to enrol for Aadhaar. You can also search nearest Enrolment centre by clicking on Locate Enrolment Center or https://appointments.uidai.gov.in/easearch.aspx . You have to enter State, District and locality for finding the nearest enrolment centre.", "found_duplicate": false},
+            {"question": "What are the documents required for enrolment for Aadhaar?", "answer": "You need to fill up an application form available at Enrolment centre along with supporting documents which are Proof of Identity (PoI), Proof of Address (PoA), Proof of Relationship (PoR) and Date of Birth(DoB) document. UIDAI accepts 31 PoI and 44 PoA , 14 PoR and 14 DoB documents. View the nationally valid list of supporting documents.", "found_duplicate": false},
+            {"question": "Do I need to bring original documents for Aadhaar enrolment?", "answer": "Yes, you need to bring original copies of supporting documents for Aadhaar enrolment. These original copies will be scanned and handed back to you after the enrolment.", "found_duplicate": false},
+            {"question": "Do I have to pay any fee for Aadhaar enrolment?", "answer": "No, Aadhaar enrolment is totally free of cost therefore you need not pay anything at the enrolment centre.", "found_duplicate": false},
+            {"question": "What kind of data gets captured during Aadhaar Enrolment?", "answer": "There are two types of data gets captured for Aadhaar enrolment i.e. Demographic (Name, Gender, DoB, Address, Mobile number and email id) & Bioemtric (10 Finger Prints, Both Iris and photograph). Mobile number and email id are optional.", "found_duplicate": false},
+            {"question": "Is there any online method of getting Enroled for Aadhaar?", "answer": "No, you have to personally visit Aadhaar enrolment centre for getting yourself Enroled as your Biometrics will be captured.", "found_duplicate": false},
+            {"question": "Can I get myself Enroled for Aadhaar just by sending required documents by Post?", "answer": "No, you have to personally visit Aadhaar enrolment centre for getting yourself Enroled as your Biometrics will be captured.", "found_duplicate": false},
+            {"question": "What if my demographic details mentioned on acknowledgement / enrolment slip are not matching with supporting documents?", "answer": "You can get your details corrected within 96 hours of your enrolment. 96 hours window starts from the time stamp mentioned on your Enrolment Slip/ Acknowledgement slip.", "found_duplicate": false},
+            {"question": "How can I get the details corrected after 96 hours?", "answer": "If you are not able to get your details corrected in 96 hours window, you can get your details updated once your Aadhaar is generated.", "found_duplicate": false},
+            {"question": "Can I get Enroled for Aadhaar if any of my fingers or iris is missing?", "answer": "Yes, you can enrol for Aadhaar even if any or all fingers / Iris are missing. Aadhaar software has provisions to handle such exceptions.", "found_duplicate": false},
+            {"question": "Is it mandatory to provide mobile number or email for Aadhaar enrolment?", "answer": "No, it is not mandatory to provide mobile number or email for Aadhaar enrolment. But it is always recommended to provide mobile number and email so that you get updates regarding your Aadhaar application status.", "found_duplicate": false},
+            {"question": "Is there any age limit for Aadhaar enrolment?", "answer": "No, there is no age limit defined for Aadhaar Enrolment. Even a new born baby can also get Enroled for Aadhaar.", "found_duplicate": false},
+            {"question": "How much time it takes to get my Aadhaar generated after the enrolment?", "answer": "It takes up to 90 days for Aadhaar generation from the date of enrolment.", "found_duplicate": false},
+            {"question": "Can I get my Aadhaar letter downloaded online after it is generated?", "answer": "Yes, once your Aadhaar is generated, you can always download e-Aadhaar letter by clicking on Download Aadhaar under Aadhaar Enrolment section on uidai.gov.in website.", "found_duplicate": false},
+            {"question": "Does the online downloaded Aadhaar letter have same validity as that of original?", "answer": "Yes, online downloaded e-Aadhaar letter has the same validity as that of original.", "found_duplicate": false},
+            {"question": "I have lost my Enrolment ID slip/ Aadhaar letter, is there any way of finding the same?", "answer": "Yes, In case your mobile number is registered in Aadhaar, you can find your Enrolment number (EID) or Aadhaar (UID) by clicking on Retrieve Lost UID/EID tab under Section Aadhaar enrolment on uidai.gov.in website or https://resident.uidai.gov.in/lost-uideid. Select EID/UID you want to retrieve and then enter your name and mobile number (as registered during Aadhaar enrolment). You will receive your EID/ Aadhaar number delivered on your email/ mobile number. In case your mobile number is not registered in Aadhaar, you have to visit nearest Permanent Aadhaar Enrolment centre.", "found_duplicate": false},
+            {"question": "I have Enroled for Aadhaar multiple times but have not received my Aadhaar letter. What should I do in this case?", "answer": "There are chances that your Aadhaar has been generated but you have not received Aadhaar letter by post. In this case, it is recommended to get your Aadhaar status checked, for all your EIDs, by clicking on Check Aadhaar Status or https://resident.uidai.gov.in/check-aadhaar or by visiting nearest Permanent Aadhaar Enrolment centre.", "found_duplicate": false},
+            {"question": "I have received SMS on my mobile that my Aadhaar is rejected, what should I do?", "answer": "Aadhaar generation involves various quality checks therefore there are chances that your Aadhaar gets rejected due to quality or any other technical reason. So if you have received SMS that your Aadhaar has been rejected, it is recommended to re-enrol yourself.", "found_duplicate": false},
+            {"question": "I dont have required documents for enrolment of Aadhaar, can I still enroll?", "answer": "Yes, even if someone in a family does not have required documents, the resident can still enrol if his/her name exists in family entitlement document. In this case the Head of Family in entitlement document needs to be Enroled first with valid PoI & PoA document and then other family members can enrol based on EID/Aadhaar number of head of family. UIDAI accepts 8 document types as Proof of Relationship (PoR). View the list of supporting documents.", "found_duplicate": false},
+            {"question": "What are Residents responsibilities in ensuring that his/her enrolment does not get rejected?", "answer": "Resident must review his/her details in English as well as in local language by looking at the resident screen available in front of him/her. Ensure that Name, Gender, DoB, Address etc. are correct. Also to ensure that no titles/ salutations like Mr./ Mrs./ Col./ Dr. etc. are prefixed or suffixed to the name. It is recommended to provide full name instead of initials for e.g. B.K Sharma should be written as Brij Kumar Sharma. Review that photograph captured by the operator is correct and recognizable.", "found_duplicate": false},
+            {"question": "Whether the Ration card NEREGA Card etc can be accepted as Valid Proof of Identity/Address for the family members listed in the document in case they do not have separate PoI or PoA document?", "answer": "Yes. The family entitlement documents is accepted as proof of Identity/Address for family enrolments as long as the head of the family whose photograph appears on the documents presents and verifies the identity and address of the family members and the Registrar authorized verifier countersigns the copy of the document as proof of acknowledgement.", "found_duplicate": false},
+            {"question": "Whether UIDAI has defined process to be followed for Family enrolments?", "answer": "Yes. Head of the Family should invariably bring the original POI/POA for verification and only those family members can be Enroled based on the family entitlement document, whose names & other details are recorded on it. For family enrolments it is desirable that the family should come together for enrolment as far as possible. In case all the members cannot make it on the same day then the head of family should invariably accompany the family member whenever he/she comes for the enrolment.", "found_duplicate": false},
+            {"question": "What is the option if the address indicated on the PoA document appears to be inadequate for postal delivery? Can additional information from the residents be accepted?", "answer": "Yes. The resident may be allowed to add minor fields such as House No., Lane No., Street Name, correcting typographic errors, minor changes/ corrections to pin code etc. to the address listed in the PoA document as long as these additions/modifications do not alter the base address mentioned in the PoA document. If the changes requested are substantial and change the base address that is listed in the PoA, the resident will require to provide an alternate PoA or enrol through an Introducer.", "found_duplicate": false}
+        ];
+
+        // NLP Helper Functions
+        function tokenize(text) {
+            return text.toLowerCase()
+                .replace(/[^\w\s]/g, ' ')
+                .split(/\s+/)
+                .filter(token => token.length > 0);
+        }
+
+        function removeStopWords(tokens) {
+            const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'up', 'about', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'between', 'among', 'within', 'without', 'along', 'following', 'across', 'behind', 'beyond', 'plus', 'except', 'but', 'near', 'under', 'over', 'such', 'own', 'same', 'where', 'why', 'how', 'what', 'which', 'who', 'when', 'where', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'shall', 'can', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'get', 'got', 'this', 'that', 'these', 'those', 'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves']);
+            return tokens.filter(token => !stopWords.has(token));
+        }
+
+        function preprocessText(text) {
+            const tokens = tokenize(text);
+            const filteredTokens = removeStopWords(tokens);
+            return filteredTokens;
+        }
+
+        function calculateCosineSimilarity(vec1, vec2) {
+            const intersection = new Set([...vec1].filter(x => vec2.has(x)));
+            const dotProduct = intersection.size;
+            const magnitude1 = Math.sqrt(vec1.size);
+            const magnitude2 = Math.sqrt(vec2.size);
+            
+            if (magnitude1 === 0 || magnitude2 === 0) return 0;
+            return dotProduct / (magnitude1 * magnitude2);
+        }
+
+        function findBestMatch(userQuery) {
+            const userTokens = new Set(preprocessText(userQuery));
+            let bestMatch = null;
+            let bestScore = 0;
+            
+            for (const faq of faqData) {
+                const questionTokens = new Set(preprocessText(faq.question));
+                const answerTokens = new Set(preprocessText(faq.answer));
+                
+                // Calculate similarity with question
+                const questionSimilarity = calculateCosineSimilarity(userTokens, questionTokens);
+                
+                // Calculate similarity with answer (weighted lower)
+                const answerSimilarity = calculateCosineSimilarity(userTokens, answerTokens) * 0.3;
+                
+                // Combined score
+                const score = questionSimilarity + answerSimilarity;
+                
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMatch = faq;
+                }
+            }
+            
+            // If similarity is too low, return null
+            if (bestScore < 0.1) {
+                return null;
+            }
+            
+            return bestMatch;
+        }
+
+        // Chat functionality
+        function addMessage(content, isUser = false) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.textContent = content;
+            
+            messageDiv.appendChild(messageContent);
+            messagesContainer.appendChild(messageDiv);
+            
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const messagesContainer = document.getElementById('chatMessages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot';
+            typingDiv.id = 'typing-indicator';
+            
+            const typingContent = document.createElement('div');
+            typingContent.className = 'typing-indicator';
+            typingContent.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            
+            typingDiv.appendChild(typingContent);
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (message === '') return;
+            
+            // Remove welcome message if it exists
+            const welcomeMessage = document.querySelector('.welcome-message');
+            if (welcomeMessage) {
+                welcomeMessage.remove();
+            }
+            
+            // Add user message
+            addMessage(message, true);
+            
+            // Clear input
+            input.value = '';
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Simulate processing delay
+            setTimeout(() => {
+                hideTypingIndicator();
+                
+                // Find best match
+                const bestMatch = findBestMatch(message);
+                
+                if (bestMatch) {
+                    addMessage(bestMatch.answer);
+                } else {
+                    addMessage("I'm sorry, I couldn't find a specific answer to your question. Could you please rephrase your question or ask about Aadhaar enrollment, document requirements, fees, or other related topics?");
+                }
+            }, 1000);
+        }
+
+        function askQuestion(question) {
+            document.getElementById('messageInput').value = question;
+            sendMessage();
+        }
+
+        // Event listeners
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Focus on input when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('messageInput').focus();
+        });
+    </script>
+</body>
+</html>
